@@ -269,17 +269,27 @@ typedef struct {
 
 notes megalovania[] =
 {
-    {81, 69, 0, 0, 1}, {69, 69, 69, 69, 2}
+    {81, 0, 0, 0, 2}, {69, 81, 0, 0, 1}
 };
 
 uint16_t music_counter = 0; //счётчик нот
-uint16_t counter_of_accords = ( sizeof(megalovania) / sizeof(notes) ); //счётчиу количества нот в песне
+uint16_t counter_of_accords = ( sizeof(megalovania) / sizeof(notes) ); //счётчик количества аккордов в песне
 
 #define bpm 230
-uint16_t ms_for_1beat = (60000.3f / bpm); //миллисекунд за бит
-uint64_t dlit_ms;
-uint64_t dlit_us;
-uint64_t global_time_us = 0;
+static uint16_t ms_for_1beat = (60000.3f / bpm); //миллисекунд за бит
+uint16_t dlit_ms[];
+
+void count_all_dlit_ms(notes song[]){
+    for (uint8_t i = 0; i < counter_of_accords; i++){
+        dlit_ms[i] = ms_for_1beat * (song[i].half_beats / 2.0f);
+    }
+}
+
+
+
+
+
+
 
 uint16_t global_event_counter = 0;
 
@@ -290,21 +300,64 @@ void duty_set(notes song[], uint16_t event_counter) {
     uint8_t c = song[event_counter].midi_n3;
     uint8_t d = song[event_counter].midi_n4;
 
-    // --- Удаление дублей (самый дешёвый вариант) ---
-    if (b == a) b = 0;
-    if (c == a || c == b) c = 0;
-    if (d == a || d == b || d == c) d = 0;
+    // // --- Удаление дублей (самый дешёвый вариант) ---
+    // if (b == a) b = 0;
+    // if (c == a || c == b) c = 0;
+    // if (d == a || d == b || d == c) d = 0;
 
     OCR0 = ( get_amplitude_note(a) + get_amplitude_note(b) +get_amplitude_note(c) + get_amplitude_note(d) ) >> 2;
 }
 
-
+void allPhaseNullify(void){
+    phase60 = 0;
+    phase61 = 0;
+    phase62 = 0;
+    phase63 = 0;
+    phase64 = 0;
+    phase65 = 0;
+    phase66 = 0;
+    phase67 = 0;
+    phase68 = 0;
+    phase69 = 0;
+    phase70 = 0;
+    phase71 = 0;
+    phase72 = 0;
+    phase73 = 0;
+    phase74 = 0;
+    phase75 = 0;
+    phase76 = 0;
+    phase77 = 0;
+    phase78 = 0;
+    phase79 = 0;
+    phase80 = 0;
+    phase81 = 0;
+    phase82 = 0;
+    phase83 = 0;
+    phase84 = 0;
+    phase85 = 0;
+    phase86 = 0;
+    phase87 = 0;
+    phase88 = 0;
+    phase89 = 0;
+    phase90 = 0;
+    phase91 = 0;
+    phase92 = 0;
+    phase93 = 0;
+    phase94 = 0;
+    phase95 = 0;
+    phase96 = 0;
+    phase97 = 0;
+    phase98 = 0;
+    phase99 = 0;
+    phase100 = 0;
+}
 
 
 uint16_t timeMs = 0;
 
 void setTimeZero(){
     TCNT1 = 0;
+    timeMs = 0;
 }
 
 uint16_t getTimeMs(){
@@ -313,6 +366,9 @@ uint16_t getTimeMs(){
 
 int main(void)
 {
+
+    count_all_dlit_ms(megalovania);
+
     DDRF = 0xFF;
 
     DDRB = 0xFF;
@@ -339,13 +395,15 @@ int main(void)
 
 
 ISR(TIMER3_COMPA_vect){
- 
     duty_set(megalovania, global_event_counter);
-    //OCR0 = ( get_amplitude_note(megalovania[global_event_counter].midi_n1) + get_amplitude_note(megalovania[global_event_counter].midi_n2) + get_amplitude_note(megalovania[global_event_counter].midi_n3) + get_amplitude_note(megalovania[global_event_counter].midi_n4) ) >> 2;
-    //phase_inc(megalovania, global_event_counter);
-    // phase69+=phase_step69;
-    // phase81+=phase_step81;
-
+    if (getTimeMs() > dlit_ms[global_event_counter]){
+        global_event_counter++;
+        setTimeZero();
+        //allPhaseNullify();
+    }
+    if (global_event_counter > counter_of_accords){
+        global_event_counter = 0;
+    }
 }
 
 ISR(TIMER1_COMPA_vect){
