@@ -284,84 +284,76 @@ uint64_t global_time_us = 0;
 
 uint16_t global_event_counter = 0;
 
-uint8_t get_duty(notes song[], uint16_t event_counter) {
-    uint8_t number_of_notes = !!(song[event_counter].midi_n1) + !!(song[event_counter].midi_n2) + !!(song[event_counter].midi_n3) + !!(song[event_counter].midi_n4);
-    uint16_t amp = 0;
-
-    amp = ( get_amplitude_note(megalovania[global_event_counter].midi_n1) + get_amplitude_note(megalovania[global_event_counter].midi_n2) + get_amplitude_note(megalovania[global_event_counter].midi_n3) + get_amplitude_note(megalovania[global_event_counter].midi_n4) );
-
-   switch (number_of_notes){
-    case 0: return 0;
-    case 1: return amp;
-    case 2: return (amp >> 1);
-    case 3: return (amp / 3);
-    case 4: return (amp >> 2);
-   }
-
+void duty_set(notes song[], uint16_t event_counter) {
+    OCR0 = ( get_amplitude_note(song[event_counter].midi_n1) + get_amplitude_note(song[event_counter].midi_n2) + get_amplitude_note(song[event_counter].midi_n3) + get_amplitude_note(song[event_counter].midi_n4) ) >> 2;
 }
 
-void phase_inc(notes song[], uint16_t event_counter) {
-    // Обрабатываем все 4 ноты из текущего события
-    for (uint8_t i = 0; i < 4; i++) {
-        uint8_t current_note;
-        
-        // Выбираем ноту в зависимости от индекса i
-        switch (i) {
-            case 0: current_note = song[event_counter].midi_n1; break;
-            case 1: current_note = song[event_counter].midi_n2; break;
-            case 2: current_note = song[event_counter].midi_n3; break;
-            case 3: current_note = song[event_counter].midi_n4; break;
-        }
-        
-        // Обрабатываем выбранную ноту
-        if (current_note != 0) { // Проверяем, есть ли нота
-            switch (current_note) {
-                case 60: phase60 += phase_step60; break;
-                case 61: phase61 += phase_step61; break;
-                case 62: phase62 += phase_step62; break;
-                case 63: phase63 += phase_step63; break;
-                case 64: phase64 += phase_step64; break;
-                case 65: phase65 += phase_step65; break;
-                case 66: phase66 += phase_step66; break;
-                case 67: phase67 += phase_step67; break;
-                case 68: phase68 += phase_step68; break;
-                case 69: phase69 += phase_step69; break;
-                case 70: phase70 += phase_step70; break;
-                case 71: phase71 += phase_step71; break;
-                case 72: phase72 += phase_step72; break;
-                case 73: phase73 += phase_step73; break;
-                case 74: phase74 += phase_step74; break;
-                case 75: phase75 += phase_step75; break;
-                case 76: phase76 += phase_step76; break;
-                case 77: phase77 += phase_step77; break;
-                case 78: phase78 += phase_step78; break;
-                case 79: phase79 += phase_step79; break;
-                case 80: phase80 += phase_step80; break;
-                case 81: phase81 += phase_step81; break;
-                case 82: phase82 += phase_step82; break;
-                case 83: phase83 += phase_step83; break;
-                case 84: phase84 += phase_step84; break;
-                case 85: phase85 += phase_step85; break;
-                case 86: phase86 += phase_step86; break;
-                case 87: phase87 += phase_step87; break;
-                case 88: phase88 += phase_step88; break;
-                case 89: phase89 += phase_step89; break;
-                case 90: phase90 += phase_step90; break;
-                case 91: phase91 += phase_step91; break;
-                case 92: phase92 += phase_step92; break;
-                case 93: phase93 += phase_step93; break;
-                case 94: phase94 += phase_step94; break;
-                case 95: phase95 += phase_step95; break;
-                case 96: phase96 += phase_step96; break;
-                case 97: phase97 += phase_step97; break;
-                case 98: phase98 += phase_step98; break;
-                case 99: phase99 += phase_step99; break;
-                case 100: phase100 += phase_step100; break;
-                default: break;
-            }
-        }
+static inline void inc_note(uint8_t note)
+{
+    switch (note) {
+        case 60: phase60 += phase_step60; break;
+        case 61: phase61 += phase_step61; break;
+        case 62: phase62 += phase_step62; break;
+        case 63: phase63 += phase_step63; break;
+        case 64: phase64 += phase_step64; break;
+        case 65: phase65 += phase_step65; break;
+        case 66: phase66 += phase_step66; break;
+        case 67: phase67 += phase_step67; break;
+        case 68: phase68 += phase_step68; break;
+        case 69: phase69 += phase_step69; break;
+        case 70: phase70 += phase_step70; break;
+        case 71: phase71 += phase_step71; break;
+        case 72: phase72 += phase_step72; break;
+        case 73: phase73 += phase_step73; break;
+        case 74: phase74 += phase_step74; break;
+        case 75: phase75 += phase_step75; break;
+        case 76: phase76 += phase_step76; break;
+        case 77: phase77 += phase_step77; break;
+        case 78: phase78 += phase_step78; break;
+        case 79: phase79 += phase_step79; break;
+        case 80: phase80 += phase_step80; break;
+        case 81: phase81 += phase_step81; break;
+        case 82: phase82 += phase_step82; break;
+        case 83: phase83 += phase_step83; break;
+        case 84: phase84 += phase_step84; break;
+        case 85: phase85 += phase_step85; break;
+        case 86: phase86 += phase_step86; break;
+        case 87: phase87 += phase_step87; break;
+        case 88: phase88 += phase_step88; break;
+        case 89: phase89 += phase_step89; break;
+        case 90: phase90 += phase_step90; break;
+        case 91: phase91 += phase_step91; break;
+        case 92: phase92 += phase_step92; break;
+        case 93: phase93 += phase_step93; break;
+        case 94: phase94 += phase_step94; break;
+        case 95: phase95 += phase_step95; break;
+        case 96: phase96 += phase_step96; break;
+        case 97: phase97 += phase_step97; break;
+        case 98: phase98 += phase_step98; break;
+        case 99: phase99 += phase_step99; break;
+        case 100: phase100 += phase_step100; break;
     }
 }
+
+void phase_inc(notes song[], uint16_t event_counter)
+{
+    uint8_t a = song[event_counter].midi_n1;
+    uint8_t b = song[event_counter].midi_n2;
+    uint8_t c = song[event_counter].midi_n3;
+    uint8_t d = song[event_counter].midi_n4;
+
+    // --- Удаление дублей (самый дешёвый вариант) ---
+    if (b == a) b = 0;
+    if (c == a || c == b) c = 0;
+    if (d == a || d == b || d == c) d = 0;
+
+    // --- Инкременты ---
+    inc_note(a);
+    inc_note(b);
+    inc_note(c);
+    inc_note(d);
+}
+
 
 uint16_t timeMs = 0;
 
@@ -402,11 +394,11 @@ int main(void)
 
 ISR(TIMER3_COMPA_vect){
  
-    //OCR0 = get_duty(megalovania, global_event_counter);
-    OCR0 = ( get_amplitude_note(megalovania[global_event_counter].midi_n1) + get_amplitude_note(megalovania[global_event_counter].midi_n2) + get_amplitude_note(megalovania[global_event_counter].midi_n3) + get_amplitude_note(megalovania[global_event_counter].midi_n4) ) >> 2;
-    phase_inc(megalovania, global_event_counter);
-    // phase69+=phase_step69;
-    // phase81+=phase_step81;
+    duty_set(megalovania, global_event_counter);
+    //OCR0 = ( get_amplitude_note(megalovania[global_event_counter].midi_n1) + get_amplitude_note(megalovania[global_event_counter].midi_n2) + get_amplitude_note(megalovania[global_event_counter].midi_n3) + get_amplitude_note(megalovania[global_event_counter].midi_n4) ) >> 2;
+    //phase_inc(megalovania, global_event_counter);
+    phase69+=phase_step69;
+    phase81+=phase_step81;
 
 }
 
