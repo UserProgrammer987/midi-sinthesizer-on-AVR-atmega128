@@ -204,54 +204,53 @@ uint8_t get_amplitude_note(uint8_t note)
 {   
     switch (note)
     {
-        // 60-71: C5 - B5 (5-я октава)
-        case 60: return sine[phase60 >> 22];
-        case 61: return sine[phase61 >> 22];
-        case 62: return sine[phase62 >> 22];
-        case 63: return sine[phase63 >> 22];
-        case 64: return sine[phase64 >> 22];
-        case 65: return sine[phase65 >> 22];
-        case 66: return sine[phase66 >> 22];
-        case 67: return sine[phase67 >> 22];
-        case 68: return sine[phase68 >> 22];
-        case 69: return sine[phase69 >> 22];
-        case 70: return sine[phase70 >> 22];
-        case 71: return sine[phase71 >> 22];
+        case 60: phase60 += phase_step60; return sine[phase60 >> 22];
+        case 61: phase61 += phase_step61; return sine[phase61 >> 22];
+        case 62: phase62 += phase_step62; return sine[phase62 >> 22];
+        case 63: phase63 += phase_step63; return sine[phase63 >> 22];
+        case 64: phase64 += phase_step64; return sine[phase64 >> 22];
+        case 65: phase65 += phase_step65; return sine[phase65 >> 22];
+        case 66: phase66 += phase_step66; return sine[phase66 >> 22];
+        case 67: phase67 += phase_step67; return sine[phase67 >> 22];
+        case 68: phase68 += phase_step68; return sine[phase68 >> 22];
+        case 69: phase69 += phase_step69; return sine[phase69 >> 22];
+        case 70: phase70 += phase_step70; return sine[phase70 >> 22];
+        case 71: phase71 += phase_step71; return sine[phase71 >> 22];
         
         // 72-83: C6 - B6 (6-я октава)
-        case 72: return sine[phase72 >> 22];
-        case 73: return sine[phase73 >> 22];
-        case 74: return sine[phase74 >> 22];
-        case 75: return sine[phase75 >> 22];
-        case 76: return sine[phase76 >> 22];
-        case 77: return sine[phase77 >> 22];
-        case 78: return sine[phase78 >> 22];
-        case 79: return sine[phase79 >> 22];
-        case 80: return sine[phase80 >> 22];
-        case 81: return sine[phase81 >> 22];
-        case 82: return sine[phase82 >> 22];
-        case 83: return sine[phase83 >> 22];
+        case 72: phase72 += phase_step72; return sine[phase72 >> 22];
+        case 73: phase73 += phase_step73; return sine[phase73 >> 22];
+        case 74: phase74 += phase_step74; return sine[phase74 >> 22];
+        case 75: phase75 += phase_step75; return sine[phase75 >> 22];
+        case 76: phase76 += phase_step76; return sine[phase76 >> 22];
+        case 77: phase77 += phase_step77; return sine[phase77 >> 22];
+        case 78: phase78 += phase_step78; return sine[phase78 >> 22];
+        case 79: phase79 += phase_step79; return sine[phase79 >> 22];
+        case 80: phase80 += phase_step80; return sine[phase80 >> 22];
+        case 81: phase81 += phase_step81; return sine[phase81 >> 22];
+        case 82: phase82 += phase_step82; return sine[phase82 >> 22];
+        case 83: phase83 += phase_step83; return sine[phase83 >> 22];
         
         // 84-95: C7 - B7 (7-я октава)
-        case 84: return sine[phase84 >> 22];
-        case 85: return sine[phase85 >> 22];
-        case 86: return sine[phase86 >> 22];
-        case 87: return sine[phase87 >> 22];
-        case 88: return sine[phase88 >> 22];
-        case 89: return sine[phase89 >> 22];
-        case 90: return sine[phase90 >> 22];
-        case 91: return sine[phase91 >> 22];
-        case 92: return sine[phase92 >> 22];
-        case 93: return sine[phase93 >> 22];
-        case 94: return sine[phase94 >> 22];
-        case 95: return sine[phase95 >> 22];
+        case 84: phase84 += phase_step84; return sine[phase84 >> 22];
+        case 85: phase85 += phase_step85; return sine[phase85 >> 22];
+        case 86: phase86 += phase_step86; return sine[phase86 >> 22];
+        case 87: phase87 += phase_step87; return sine[phase87 >> 22];
+        case 88: phase88 += phase_step88; return sine[phase88 >> 22];
+        case 89: phase89 += phase_step89; return sine[phase89 >> 22];
+        case 90: phase90 += phase_step90; return sine[phase90 >> 22];
+        case 91: phase91 += phase_step91; return sine[phase91 >> 22];
+        case 92: phase92 += phase_step92; return sine[phase92 >> 22];
+        case 93: phase93 += phase_step93; return sine[phase93 >> 22];
+        case 94: phase94 += phase_step94; return sine[phase94 >> 22];
+        case 95: phase95 += phase_step95; return sine[phase95 >> 22];
         
-        // 96-100: C8 - E8 (8-я октава)
-        case 96: return sine[phase96 >> 22];
-        case 97: return sine[phase97 >> 22];
-        case 98: return sine[phase98 >> 22];
-        case 99: return sine[phase99 >> 22];
-        case 100: return sine[phase100 >> 22];
+        // 96-100: C8 - E8 (8-я октава, первые 5 нот)
+        case 96: phase96 += phase_step96; return sine[phase96 >> 22];
+        case 97: phase97 += phase_step97; return sine[phase97 >> 22];
+        case 98: phase98 += phase_step98; return sine[phase98 >> 22];
+        case 99: phase99 += phase_step99; return sine[phase99 >> 22];
+        case 100: phase100 += phase_step100; return sine[phase100 >> 22];
             
         default:
             return 0;
@@ -285,58 +284,7 @@ uint64_t global_time_us = 0;
 uint16_t global_event_counter = 0;
 
 void duty_set(notes song[], uint16_t event_counter) {
-    OCR0 = ( get_amplitude_note(song[event_counter].midi_n1) + get_amplitude_note(song[event_counter].midi_n2) + get_amplitude_note(song[event_counter].midi_n3) + get_amplitude_note(song[event_counter].midi_n4) ) >> 2;
-}
 
-static inline void inc_note(uint8_t note)
-{
-    switch (note) {
-        case 60: phase60 += phase_step60; break;
-        case 61: phase61 += phase_step61; break;
-        case 62: phase62 += phase_step62; break;
-        case 63: phase63 += phase_step63; break;
-        case 64: phase64 += phase_step64; break;
-        case 65: phase65 += phase_step65; break;
-        case 66: phase66 += phase_step66; break;
-        case 67: phase67 += phase_step67; break;
-        case 68: phase68 += phase_step68; break;
-        case 69: phase69 += phase_step69; break;
-        case 70: phase70 += phase_step70; break;
-        case 71: phase71 += phase_step71; break;
-        case 72: phase72 += phase_step72; break;
-        case 73: phase73 += phase_step73; break;
-        case 74: phase74 += phase_step74; break;
-        case 75: phase75 += phase_step75; break;
-        case 76: phase76 += phase_step76; break;
-        case 77: phase77 += phase_step77; break;
-        case 78: phase78 += phase_step78; break;
-        case 79: phase79 += phase_step79; break;
-        case 80: phase80 += phase_step80; break;
-        case 81: phase81 += phase_step81; break;
-        case 82: phase82 += phase_step82; break;
-        case 83: phase83 += phase_step83; break;
-        case 84: phase84 += phase_step84; break;
-        case 85: phase85 += phase_step85; break;
-        case 86: phase86 += phase_step86; break;
-        case 87: phase87 += phase_step87; break;
-        case 88: phase88 += phase_step88; break;
-        case 89: phase89 += phase_step89; break;
-        case 90: phase90 += phase_step90; break;
-        case 91: phase91 += phase_step91; break;
-        case 92: phase92 += phase_step92; break;
-        case 93: phase93 += phase_step93; break;
-        case 94: phase94 += phase_step94; break;
-        case 95: phase95 += phase_step95; break;
-        case 96: phase96 += phase_step96; break;
-        case 97: phase97 += phase_step97; break;
-        case 98: phase98 += phase_step98; break;
-        case 99: phase99 += phase_step99; break;
-        case 100: phase100 += phase_step100; break;
-    }
-}
-
-void phase_inc(notes song[], uint16_t event_counter)
-{
     uint8_t a = song[event_counter].midi_n1;
     uint8_t b = song[event_counter].midi_n2;
     uint8_t c = song[event_counter].midi_n3;
@@ -347,12 +295,10 @@ void phase_inc(notes song[], uint16_t event_counter)
     if (c == a || c == b) c = 0;
     if (d == a || d == b || d == c) d = 0;
 
-    // --- Инкременты ---
-    inc_note(a);
-    inc_note(b);
-    inc_note(c);
-    inc_note(d);
+    OCR0 = ( get_amplitude_note(a) + get_amplitude_note(b) +get_amplitude_note(c) + get_amplitude_note(d) ) >> 2;
 }
+
+
 
 
 uint16_t timeMs = 0;
@@ -397,8 +343,8 @@ ISR(TIMER3_COMPA_vect){
     duty_set(megalovania, global_event_counter);
     //OCR0 = ( get_amplitude_note(megalovania[global_event_counter].midi_n1) + get_amplitude_note(megalovania[global_event_counter].midi_n2) + get_amplitude_note(megalovania[global_event_counter].midi_n3) + get_amplitude_note(megalovania[global_event_counter].midi_n4) ) >> 2;
     //phase_inc(megalovania, global_event_counter);
-    phase69+=phase_step69;
-    phase81+=phase_step81;
+    // phase69+=phase_step69;
+    // phase81+=phase_step81;
 
 }
 
