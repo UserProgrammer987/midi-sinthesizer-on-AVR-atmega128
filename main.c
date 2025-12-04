@@ -44,7 +44,18 @@
 #define DS7 99
 #define E7  100
 
-#define ZADERSHKA 500
+#define ZADERSHKA 125
+
+uint16_t timeMs = 0;
+
+void setTimeZero(){
+    TCNT1 = 0;
+    timeMs = 0;
+}
+
+uint16_t getTimeMs(){
+    return timeMs;
+}
 
 const uint8_t sine[1024] = {
     127, 128, 129, 129, 130, 131, 132, 132, 133, 134, 135, 136, 136, 137, 138, 139,
@@ -269,7 +280,7 @@ typedef struct {
 
 notes megalovania[] =
 {
-    {81, 0, 0, 0, 2}, {69, 81, 0, 0, 1}
+    {69, 0, 0, 0, 1}, //{69, 81, 0, 0, 1}
 };
 
 uint16_t music_counter = 0; //счётчик нот
@@ -285,13 +296,34 @@ void count_all_dlit_ms(notes song[]){
     }
 }
 
-
-
-
-
-
-
 uint16_t global_event_counter = 0;
+
+typedef struct {
+    uint8_t attack;
+    uint8_t decay;
+    //uint8_t sustain;
+    uint8_t release;
+} adsr;
+
+adsr adsr_variables[] = {{5, 30, 10}};
+
+uint8_t adsr_factor(uint16_t time_ms){
+    uint16_t treshold = ( dlit_ms[global_event_counter] - adsr_variables[0].release);
+    if (time_ms < adsr_variables[0].attack){
+        return ( (time_ms * 20) / 5 );
+    }
+    else if(time_ms < adsr_variables[0].decay){
+        return ( ( (-5 * time_ms) + 276 ) / 12 );
+    }
+    else if ( (time_ms < treshold) ){
+        return 10;
+    }
+    else if (time_ms > treshold){
+        return (10UL * (treshold + adsr_variables[0].release - time_ms)) / adsr_variables[0].release;
+    }
+}
+
+
 
 void duty_set(notes song[], uint16_t event_counter) {
 
@@ -305,7 +337,9 @@ void duty_set(notes song[], uint16_t event_counter) {
     // if (c == a || c == b) c = 0;
     // if (d == a || d == b || d == c) d = 0;
 
-    OCR0 = ( get_amplitude_note(a) + get_amplitude_note(b) +get_amplitude_note(c) + get_amplitude_note(d) ) >> 2;
+    uint8_t duty = ( get_amplitude_note(a) + get_amplitude_note(b) +get_amplitude_note(c) + get_amplitude_note(d) ) >> 3;
+
+    OCR0 = ( duty * adsr_factor(getTimeMs()) ) / 10;
 }
 
 void allPhaseNullify(void){
@@ -352,17 +386,6 @@ void allPhaseNullify(void){
     phase100 = 0;
 }
 
-
-uint16_t timeMs = 0;
-
-void setTimeZero(){
-    TCNT1 = 0;
-    timeMs = 0;
-}
-
-uint16_t getTimeMs(){
-    return timeMs;
-}
 
 int main(void)
 {
