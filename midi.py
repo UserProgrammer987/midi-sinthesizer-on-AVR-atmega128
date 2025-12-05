@@ -71,8 +71,13 @@ def convert_midi_to_array(filename):
         s = "{" + ", ".join(str(x) for x in notes) + f", {length}" + "}"
         out_strings.append(s)
 
-    # Добавляем запятую между элементами
-    print(", ".join(out_strings))
+    # Добавляем запятую между элементами и перенос строки каждые 8 элементов
+    result_lines = []
+    for i in range(0, len(out_strings), 8):
+        line = ", ".join(out_strings[i:i+8])
+        result_lines.append(line)
+    
+    print(",\n".join(result_lines))
 
 
 # ----------------------------------
