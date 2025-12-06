@@ -169,56 +169,79 @@ uint8_t get_amplitude_note(uint8_t note)
 
 
 typedef struct {
-    uint8_t midi_n1;
-    uint8_t midi_n2;
-    uint8_t midi_n3;
-    uint8_t midi_n4;
+    uint8_t note;
+    bool note_switch; // 0-ноту вырубить 1-ноту врубить
+    uint8_t channel_num; // на какой канал врубить/вырубить ноту, их 8, от 0 до 7
+    uint64_t tick; // На каком тике прерывания выполнить действие
 
-    float half_beats;
-} notes;
+} event;
 
-notes megalovania[] =
+typedef struct {
+    uint8_t note;
+    uint8_t amp;
+} channel;
+
+channel channels[] = { 
+    {0, 0},
+    {0, 0}
+
+
+
+};
+
+void channel_amplitude_set(uint8_t channel_num){
+    uint8_t ampl; 
+    ampl = get_amplitude_note(channels[channel_num].note);
+    channels[channel_num].amp = ampl;
+}
+
+static event megalovania[] =
 {
-    {69, 0, 0, 0, 1}, {69, 81, 0, 0, 1}
+    {69, 1, 0, 0}, {69, 0, 0, 2063}, {69, 1, 0, 2221}, {69, 0, 0, 4300}
 };
 
 uint16_t music_counter = 0; //счётчик нот
-uint16_t counter_of_accords = ( sizeof(megalovania) / sizeof(notes) ); //счётчик количества аккордов в песне
+uint16_t counter_of_events = ( sizeof(megalovania) / sizeof(event) ); //счётчик количества событий в песне
 
 #define bpm 230
 static uint16_t ms_for_1beat = (60000.3f / bpm); //миллисекунд за бит
 uint16_t dlit_ms[];
 
-void count_all_dlit_ms(notes song[]){
-    for (uint8_t i = 0; i < counter_of_accords; i++){
-        dlit_ms[i] = ms_for_1beat * (song[i].half_beats / 2.0f);
+uint64_t global_event_counter = 0;
+uint64_t global_tick_counter = 0;
+
+void do_events(event song[], uint64_t event_counter){
+    uint8_t note = song[event_counter].note; //нота
+    uint8_t num = song[event_counter].channel_num; //номер канала
+    if (song[event_counter].tick <= global_tick_counter){
+
+        if (song[event_counter].note_switch){
+            channels[num].note = note;
+        }
+        else{
+            channels[num].note = 0;
+        }
     }
+    else{
+        return;
+    }
+
+    global_event_counter++;
+    if (global_event_counter > counter_of_events){
+        global_event_counter = 0;
+    }
+   
 }
-
-uint16_t global_event_counter = 0;
-
-typedef struct {
-    uint8_t attack;
-    uint8_t decay;
-    //uint8_t sustain;
-    uint8_t release;
-} adsr;
-
-adsr adsr_variables[] = {{5, 30, 10}};
 
 // доделать release factor
 uint8_t release_factor(void){
 
 }
 
-void duty_set(notes song[], uint16_t event_counter) {
+void duty_set(void) {
+    uint8_t duty;
 
-    uint8_t a = song[event_counter].midi_n1;
-    uint8_t b = song[event_counter].midi_n2;
-    uint8_t c = song[event_counter].midi_n3;
-    uint8_t d = song[event_counter].midi_n4;
-
-    uint8_t duty = ( get_amplitude_note(a) + get_amplitude_note(b) + get_amplitude_note(c) + get_amplitude_note(d)) >> 2;
+    duty = ( channels[0].amp + channels[1].amp ) / 2;
 
     OCR0 = ( duty );
 }
@@ -229,7 +252,6 @@ void duty_set(notes song[], uint16_t event_counter) {
 int main(void)
 {
     init_phase_accumulators();
-    count_all_dlit_ms(megalovania);
 
     DDRF = 0xFF;
 
@@ -255,15 +277,13 @@ int main(void)
 
 
 ISR(TIMER3_COMPA_vect){
-    duty_set(megalovania, global_event_counter);
-    if (getTimeMs() > dlit_ms[global_event_counter]){
-        global_event_counter++;
-        setTimeZero();
-        allPhaseNullify();
-    }
-    if (global_event_counter > counter_of_accords){
-        global_event_counter = 0;
-    }
+    do_events(megalovania, global_event_counter);
+    channel_amplitude_set(0);
+    channel_amplitude_set(1);
+
+    duty_set();
+
+    global_tick_counter++;
 }
 
 ISR(TIMER1_COMPA_vect){
