@@ -11,38 +11,118 @@
 #define RW 4 // нога PE1(proteus)/PD4 к RW подключена
 #define E 6 // нога PE2(proteus)/PD6 к E подключена
 
-#define A4  69
-#define AS4 70
-#define B4  71
-#define C5  72
-#define CS5 73
-#define D5  74
-#define DS5 75
-#define E5  76
-#define F5  77
-#define FS5 78
-#define G5  79
-#define GS5 80
-#define A5  81
-#define AS5 82
-#define B5  83
-#define C6  84
-#define CS6 85
-#define D6  86
-#define DS6 87
-#define E6  88
-#define F6  89
-#define FS6 90
-#define G6  91
-#define GS6 92
-#define A6  93
-#define AS6 94
-#define B6  95
-#define C7  96
-#define CS7 97
-#define D7  98
-#define DS7 99
-#define E7  100
+// =============================================
+// Более компактный вариант (только нужный диапазон)
+// =============================================
+
+// Octave 0
+#define AS0 10
+#define B0  11
+
+// Octave 1
+#define C1  12
+#define CS1 13
+#define D1  14
+#define DS1 15
+#define E1  16
+#define F1  17
+#define FS1 18
+#define G1  19
+#define GS1 20
+#define A1  21
+#define AS1 22
+#define B1  23
+
+// Octave 2
+#define C2  24
+#define CS2 25
+#define D2  26
+#define DS2 27
+#define E2  28
+#define F2  29
+#define FS2 30
+#define G2  31
+#define GS2 32
+#define A2  33
+#define AS2 34
+#define B2  35
+
+// Octave 3
+#define C3  36
+#define CS3 37
+#define D3  38
+#define DS3 39
+#define E3  40
+#define F3  41
+#define FS3 42
+#define G3  43
+#define GS3 44
+#define A3  45
+#define AS3 46
+#define B3  47
+
+// Octave 4
+#define C4  48
+#define CS4 49
+#define D4  50
+#define DS4 51
+#define E4  52
+#define F4  53
+#define FS4 54
+#define G4  55
+#define GS4 56
+#define A4  57
+#define AS4 58
+#define B4  59
+
+// Octave 5
+#define C5  60  // Middle C
+#define CS5 61
+#define D5  62
+#define DS5 63
+#define E5  64
+#define F5  65
+#define FS5 66
+#define G5  67
+#define GS5 68
+#define A5  69  // A4 = 440 Hz
+#define AS5 70
+#define B5  71
+
+// Octave 6
+#define C6  72
+#define CS6 73
+#define D6  74
+#define DS6 75
+#define E6  76
+#define F6  77
+#define FS6 78
+#define G6  79
+#define GS6 80
+#define A6  81
+#define AS6 82
+#define B6  83
+
+// Octave 7
+#define C7  84
+#define CS7 85
+#define D7  86
+#define DS7 87
+#define E7  88
+#define F7  89
+#define FS7 90
+#define G7  91
+#define GS7 92
+#define A7  93
+#define AS7 94
+#define B7  95
+
+// Octave 8
+#define C8  96
+#define CS8 97
+#define D8  98
+#define DS8 99
+#define E8  100  // Ваш конечный диапазон
 
 #define ZADERSHKA 125
 
@@ -170,9 +250,9 @@ uint8_t get_amplitude_note(uint8_t note)
 
 typedef struct {
     uint8_t note;
-    bool note_switch; // 0-ноту вырубить 1-ноту врубить
-    uint8_t channel_num; // на какой канал врубить/вырубить ноту, их 8, от 0 до 7
-    uint64_t tick; // На каком тике прерывания выполнить действие
+    uint16_t event_settings; //старший бит(15й) - 0 или 1, включить или выключить ноту
+    // биты после него(с 14-го по 12й) - на какой канал включить ноту
+    // оставшиеся биты - на каком step событие должно совершиться
 
 } event;
 
@@ -183,10 +263,13 @@ typedef struct {
 
 channel channels[] = { 
     {0, 0},
-    {0, 0}
-
-
-
+    {0, 0},
+    {0, 0},
+    {0, 0},
+    {0, 0},
+    {0, 0},
+    {0, 0},
+    {0, 0},
 };
 
 void channel_amplitude_set(uint8_t channel_num){
@@ -195,11 +278,11 @@ void channel_amplitude_set(uint8_t channel_num){
     channels[channel_num].amp = ampl;
 }
 
+// D:/Study/5sem/MPU SU/st7920/Megalovania.mid
 static event megalovania[] =
 {
-    {69, 1, 0, 0}, {69, 0, 0, 2063}, {69, 1, 0, 2221}, {69, 0, 0, 4300}
+    {D4, 32768}, {D4, 2}, {D4, 32770}, {D4, 4}, {D5, 32772}, {D5, 8}, {A4, 32776}, {A4, 15}, {GS4, 32783}, {GS4, 19}, {G4, 32787}, {G4, 23}, {F4, 32791}, {F4, 28}, {D4, 32796}, {D4, 30}, {F4, 32798}, {F4, 32}, {G4, 32800}, {G4, 34}, {C4, 32802}, {C4, 36}, {C4, 32804}, {C4, 38}, {D5, 32807}, {D5, 43}, {A4, 32811}, {A4, 49}, {GS4, 32817}, {GS4, 54}, {G4, 32822}, {G4, 58}, {F4, 32826}, {F4, 62}, {D4, 32830}, {D4, 65}, {F4, 32833}, {F4, 67}, {G4, 32835}, {G4, 69}, {B3, 32837}, {B3, 71}, {B3, 32839}, {B3, 73}, {D5, 32841}, {D5, 78}, {A4, 32846}, {A4, 84},
 };
-
 uint16_t music_counter = 0; //счётчик нот
 uint16_t counter_of_events = ( sizeof(megalovania) / sizeof(event) ); //счётчик количества событий в песне
 
@@ -212,10 +295,12 @@ uint64_t global_tick_counter = 0;
 
 void do_events(event song[], uint64_t event_counter){
     uint8_t note = song[event_counter].note; //нота
-    uint8_t num = song[event_counter].channel_num; //номер канала
-    if (song[event_counter].tick <= global_tick_counter){
+    uint8_t num = ( (song[event_counter].event_settings) >> 12 ) & 0b111; //номер канала (сначала сдвинули на 12 вправо, чтобы убрать все младшие биты, а затем маску чтобы убрать старшие биты)
+    uint8_t switch_code = ( (song[event_counter].event_settings) >> 15 ) & 1; //действие включить/выключить
+    uint64_t tick = (song[event_counter].event_settings & 0xFFF) * 952; // на каком тике должно быть событие, 952-перевод из "шага" в тик прерывания
+    if (tick <= global_tick_counter){
 
-        if (song[event_counter].note_switch){
+        if (switch_code){
             channels[num].note = note;
         }
         else{
@@ -229,6 +314,7 @@ void do_events(event song[], uint64_t event_counter){
     global_event_counter++;
     if (global_event_counter > counter_of_events){
         global_event_counter = 0;
+        global_tick_counter = 0;
     }
    
 }
@@ -238,10 +324,24 @@ uint8_t release_factor(void){
 
 }
 
+bool is_active(uint8_t number){
+    if (number != 0){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
 void duty_set(void) {
     uint8_t duty;
+    //uint8_t number_of_active_channels = 0;
 
-    duty = ( channels[0].amp + channels[1].amp ) / 2;
+
+    //number_of_active_channels = is_active(channels[0].note) + is_active(channels[1].note) + is_active(channels[2].note) + is_active(channels[3].note) + is_active(channels[4].note) + is_active(channels[5].note) + is_active(channels[6].note) + is_active(channels[7].note);
+
+
+    duty = (channels[0].amp + channels[1].amp) >> 1;
 
     OCR0 = ( duty );
 }

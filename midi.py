@@ -1,86 +1,101 @@
 from mido import MidiFile
 
-NOTE_NAMES = ['C', 'CS', 'D', 'DS', 'E', 'F', 'FS', 'G', 'GS', 'A', 'AS', 'B']
+NOTE_NAMES = ["C", "CS", "D", "DS", "E", "F", "FS", "G", "GS", "A", "AS", "B"]
 
-def midi_note_to_name(n):
-    octave = (n // 12) - 1
-    name = NOTE_NAMES[n % 12]
-    return f"{name}{octave}"
+def midi_note_to_name(note):
+    octave = note // 12 - 1
+    return NOTE_NAMES[note % 12] + str(octave)
 
-def extract_segments(mid):
-    ticks_per_beat = mid.ticks_per_beat
 
-    # читаем все note_on/note_off с абсолютным временем
-    events = []
-    for track in mid.tracks:
-        current_time = 0
+def convert_midi_to_events(path, tick_us=63, release_us=5000):
+    midi = MidiFile(path)
+    ticks_per_beat = midi.ticks_per_beat
+
+    # --- 1. собрать все сообщения по абсолютному тику ---
+    msgs = []
+    for track in midi.tracks:
+        abs_tick = 0
         for msg in track:
-            current_time += msg.time
-            if msg.type == "note_on" and msg.velocity > 0:
-                events.append((current_time, "on", msg.note))
-            elif (msg.type == "note_on" and msg.velocity == 0) or msg.type == "note_off":
-                events.append((current_time, "off", msg.note))
+            abs_tick += msg.time
+            msgs.append((abs_tick, msg))
+    msgs.sort(key=lambda x: x[0])
 
-    # сортируем по времени
-    events.sort(key=lambda x: x[0])
+    # --- 2. перевод тиков в микросекунды ---
+    tempo = 500000
+    current_time_us = 0
+    prev_tick = 0
 
-    segments = []
-    active_notes = set()
-    last_time = 0
+    active = {}
+    raw = []
 
-    for time, typ, note in events:
-        if time != last_time:
-            if active_notes:
-                duration_ticks = time - last_time
-                segments.append((set(active_notes), duration_ticks))
-            last_time = time
+    for abs_tick, msg in msgs:
+        delta = abs_tick - prev_tick
+        if delta > 0:
+            current_time_us += (delta * tempo) / ticks_per_beat
+            prev_tick = abs_tick
 
-        if typ == "on":
-            active_notes.add(note)
-        elif note in active_notes:
-            active_notes.remove(note)
+        if msg.type == "set_tempo":
+            tempo = msg.tempo
 
-    return segments, ticks_per_beat
+        if msg.type == "note_on" and msg.velocity > 0:
+            key = (msg.note, msg.channel)
+            active.setdefault(key, []).append(current_time_us)
 
+        elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
+            key = (msg.note, msg.channel)
+            if key not in active or not active[key]:
+                continue
 
-def segments_to_output(segments, tpq):
-    result = []
-    for notes_set, ticks in segments:
-        notes_list = sorted(list(notes_set))
-        names = [midi_note_to_name(n) for n in notes_list]
+            start = active[key].pop(0)
+            end = current_time_us - release_us
+            if end < start:
+                end = start
 
-        # дополняем до 4 нот
-        while len(names) < 4:
-            names.append("0")
-        names = names[:4]
+            raw.append((start, 1, msg.note, msg.channel))
+            raw.append((end, 0, msg.note, msg.channel))
 
-        # перевод длительности в полбиты
-        halfbeats = ticks / (tpq / 2)
-        result.append((names, int(round(halfbeats))))
+    # --- 3. Перевод времени в ТИКИ ---
+    events = []
+    for t_us, tp, note, ch in raw:
+        tick = int(t_us / 63)
+        events.append([tick, tp, note, ch])
 
-    return result
+    events.sort(key=lambda x: (x[0], -x[1], x[2], x[3]))
 
+    # --- 4. полифония (сдвиг событий) ---
+    fixed = []
+    last_tick = None
+    shift = 0
 
-def convert_midi_to_array(filename):
-    mid = MidiFile(filename)
-    segments, tpq = extract_segments(mid)
-    output = segments_to_output(segments, tpq)
+    for tick, tp, note, ch in events:
+        if tick != last_tick:
+            shift = 0
+            last_tick = tick
 
-    out_strings = []
-    for notes, length in output:
-        s = "{" + ", ".join(str(x) for x in notes) + f", {length}" + "}"
-        out_strings.append(s)
+        new_tick = tick + shift
+        shift += 1
 
-    # Добавляем запятую между элементами и перенос строки каждые 8 элементов
-    result_lines = []
-    for i in range(0, len(out_strings), 8):
-        line = ", ".join(out_strings[i:i+8])
-        result_lines.append(line)
-    
-    print(",\n".join(result_lines))
+        fixed.append((new_tick, tp, note, ch))
 
+    fixed.sort(key=lambda x: (x[0], -x[1], x[2], x[3]))
 
-# ----------------------------------
-# Использование:
-convert_midi_to_array("D:/Study/5sem/MPU SU/st7920/Megalovania.mid")
-# ----------------------------------
+    # --- 5. перевод ТИК → ШАГИ (1 step = 954 ticks) ---
+    final = []
+    for tick, tp, note, ch in fixed:
+        step = tick // 954
+        final.append((note, tp, ch, step))
+
+    # --- 6. Упаковка 16-битного значения ---
+    # bit 15     = tp
+    # bits 14-12 = channel
+    # bits 11-0  = step
+    out = []
+
+    for note, tp, ch, step in final:
+        event_word = ((tp & 1) << 15) | ((ch & 0b111) << 12) | (step & 0xFFF)
+        note_name = midi_note_to_name(note)
+        out.append(f"{{{note_name}, {event_word}}}")
+
+    return "static event megalovania[] =\n{\n    " + ", ".join(out) + ", {}\n};"
+
+print(convert_midi_to_events("D:/Study/5sem/MPU SU/st7920/Megalovania.mid"))
