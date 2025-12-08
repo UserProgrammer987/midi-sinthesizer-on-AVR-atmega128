@@ -98,4 +98,4 @@ def convert_midi_to_events(path, tick_us=63, release_us=5000):
 
     return "static event megalovania[] =\n{\n    " + ", ".join(out) + ", {}\n};"
 
-print(convert_midi_to_events("D:/Study/5sem/MPU SU/st7920/Megalovania.mid"))
+print(convert_midi_to_events("Megalovania.mid"))
