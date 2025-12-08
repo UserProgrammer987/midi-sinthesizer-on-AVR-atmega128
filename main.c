@@ -290,14 +290,14 @@ uint16_t counter_of_events = ( sizeof(megalovania) / sizeof(event) ); //счёт
 static uint16_t ms_for_1beat = (60000.3f / bpm); //миллисекунд за бит
 uint16_t dlit_ms[];
 
-uint64_t global_event_counter = 0;
-uint64_t global_tick_counter = 0;
+uint16_t global_event_counter = 0;
+uint32_t global_tick_counter = 0;
 
-void do_events(event song[], uint64_t event_counter){
+void do_events(event song[], uint32_t event_counter){
     uint8_t note = song[event_counter].note; //нота
     uint8_t num = ( (song[event_counter].event_settings) >> 12 ) & 0b111; //номер канала (сначала сдвинули на 12 вправо, чтобы убрать все младшие биты, а затем маску чтобы убрать старшие биты)
     uint8_t switch_code = ( (song[event_counter].event_settings) >> 15 ) & 1; //действие включить/выключить
-    uint64_t tick = (song[event_counter].event_settings & 0xFFF) * 952; // на каком тике должно быть событие, 952-перевод из "шага" в тик прерывания
+    uint32_t tick = (song[event_counter].event_settings & 0xFFF) * 952; // на каком тике должно быть событие, 952-перевод из "шага" в тик прерывания
     if (tick <= global_tick_counter){
 
         if (switch_code){
@@ -341,7 +341,7 @@ void duty_set(void) {
     //number_of_active_channels = is_active(channels[0].note) + is_active(channels[1].note) + is_active(channels[2].note) + is_active(channels[3].note) + is_active(channels[4].note) + is_active(channels[5].note) + is_active(channels[6].note) + is_active(channels[7].note);
 
 
-    duty = (channels[0].amp + channels[1].amp) >> 1;
+    duty = (channels[0].amp + channels[1].amp) / 2;
 
     OCR0 = ( duty );
 }
